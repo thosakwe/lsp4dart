@@ -2,6 +2,8 @@ import 'package:build_runner/build_runner.dart';
 import 'package:owl_codegen/json_generator.dart';
 import 'package:source_gen/builder.dart';
 
-final PhaseGroup PHASES = new PhaseGroup.singleAction(
+final PhaseGroup phaseGroup = new PhaseGroup.singleAction(
     new GeneratorBuilder([new JsonGenerator()], isStandalone: true),
-    new InputSet('lsp', const []));
+    new InputSet('lsp', const [
+      'lib/src/protocol/interfaces/*.dart'
+    ]));
