@@ -14,6 +14,97 @@ class Message {
   }
 }
 
+class RequestMessage extends Message {
+  dynamic id;
+
+  String method;
+
+  dynamic params;
+
+  String jsonrpc;
+
+  RequestMessage({this.id, this.method, this.params, this.jsonrpc});
+
+  static RequestMessage parse(Map map) {
+    return new RequestMessage(
+        id: map['id'],
+        method: map['method'],
+        params: map['params'],
+        jsonrpc: map['jsonrpc']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'method': method, 'params': params, 'jsonrpc': jsonrpc};
+  }
+}
+
+class ResponseMessage extends Message {
+  dynamic id;
+
+  dynamic result;
+
+  ResponseError error;
+
+  String jsonrpc;
+
+  ResponseMessage({this.id, this.result, this.error, this.jsonrpc});
+
+  static ResponseMessage parse(Map map) {
+    return new ResponseMessage(
+        id: map['id'],
+        result: map['result'],
+        error: map['error'] is! Map ? null : ResponseError.parse(map['error']),
+        jsonrpc: map['jsonrpc']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'result': result,
+      'error': error?.toJson(),
+      'jsonrpc': jsonrpc
+    };
+  }
+}
+
+class ResponseError<D> {
+  num code;
+
+  String message;
+
+  D data;
+
+  ResponseError({this.code, this.message, this.data});
+
+  static ResponseError parse(Map map) {
+    return new ResponseError(
+        code: map['code'], message: map['message'], data: map['data']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'code': code, 'message': message, 'data': data};
+  }
+}
+
+class NotificationMessage extends Message {
+  String method;
+
+  dynamic params;
+
+  String jsonrpc;
+
+  NotificationMessage({this.method, this.params, this.jsonrpc});
+
+  static NotificationMessage parse(Map map) {
+    return new NotificationMessage(
+        method: map['method'], params: map['params'], jsonrpc: map['jsonrpc']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'method': method, 'params': params, 'jsonrpc': jsonrpc};
+  }
+}
+
 class CancelParams {
   dynamic id;
 
@@ -63,7 +154,7 @@ class Range {
 }
 
 class Location {
-  dynamic uri;
+  String uri;
 
   Range range;
 
@@ -153,7 +244,7 @@ class TextEdit {
 }
 
 class TextDocumentEdit {
-  dynamic textDocument;
+  VersionedTextDocumentIdentifier textDocument;
 
   List<TextEdit> edits;
 
@@ -161,7 +252,9 @@ class TextDocumentEdit {
 
   static TextDocumentEdit parse(Map map) {
     return new TextDocumentEdit(
-        textDocument: map['textDocument'],
+        textDocument: map['textDocument'] is! Map
+            ? null
+            : VersionedTextDocumentIdentifier.parse(map['textDocument']),
         edits: map['edits'] is! Iterable
             ? null
             : map['edits'].map<TextEdit>(TextEdit.parse).toList());
@@ -169,14 +262,39 @@ class TextDocumentEdit {
 
   Map<String, dynamic> toJson() {
     return {
-      'textDocument': textDocument,
+      'textDocument': textDocument?.toJson(),
       'edits': edits?.map((x) => x.toJson())
     };
   }
 }
 
+class WorkspaceEdit {
+  Map<String, List<TextEdit>> changes;
+
+  List<TextDocumentEdit> documentChanges;
+
+  WorkspaceEdit({this.changes, this.documentChanges});
+
+  static WorkspaceEdit parse(Map map) {
+    return new WorkspaceEdit(
+        changes: map['changes'],
+        documentChanges: map['documentChanges'] is! Iterable
+            ? null
+            : map['documentChanges']
+                .map<TextDocumentEdit>(TextDocumentEdit.parse)
+                .toList());
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'changes': changes,
+      'documentChanges': documentChanges?.map((x) => x.toJson())
+    };
+  }
+}
+
 class TextDocumentIdentifier {
-  dynamic uri;
+  String uri;
 
   TextDocumentIdentifier({this.uri});
 
@@ -190,7 +308,7 @@ class TextDocumentIdentifier {
 }
 
 class TextDocumentItem {
-  dynamic uri;
+  String uri;
 
   String languageId;
 
@@ -215,6 +333,23 @@ class TextDocumentItem {
       'version': version,
       'text': text
     };
+  }
+}
+
+class VersionedTextDocumentIdentifier extends TextDocumentIdentifier {
+  num version;
+
+  String uri;
+
+  VersionedTextDocumentIdentifier({this.version, this.uri});
+
+  static VersionedTextDocumentIdentifier parse(Map map) {
+    return new VersionedTextDocumentIdentifier(
+        version: map['version'], uri: map['uri']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'version': version, 'uri': uri};
   }
 }
 
@@ -264,17 +399,17 @@ class DocumentFilter {
 }
 
 class InitializeParams {
-  dynamic processId;
+  num processId;
 
-  dynamic rootPath;
+  String rootPath;
 
-  dynamic rootUri;
+  String rootUri;
 
   dynamic initializationOptions;
 
   ClientCapabilities capabilities;
 
-  dynamic trace;
+  String trace;
 
   InitializeParams(
       {this.processId,
@@ -308,10 +443,192 @@ class InitializeParams {
   }
 }
 
-class ClientCapabilities {
-  dynamic workspace;
+class WorkspaceClientCapabilities {
+  bool applyEdit;
 
-  dynamic textDocument;
+  WorkspaceClientCapabilitiesWorkspaceEdit workspaceEdit;
+
+  WorkspaceClientCapabilitiesDidChangeConfiguration didChangeConfiguration;
+
+  WorkspaceClientCapabilitiesDidChangeWatchedFiles didChangeWatchedFiles;
+
+  WorkspaceClientCapabilitiesSymbol symbol;
+
+  WorkspaceClientCapabilitiesExecuteCommand executeCommand;
+
+  WorkspaceClientCapabilities(
+      {this.applyEdit,
+      this.workspaceEdit,
+      this.didChangeConfiguration,
+      this.didChangeWatchedFiles,
+      this.symbol,
+      this.executeCommand});
+
+  static WorkspaceClientCapabilities parse(Map map) {
+    return new WorkspaceClientCapabilities(
+        applyEdit: map['applyEdit'],
+        workspaceEdit: map['workspaceEdit'] is! Map
+            ? null
+            : WorkspaceClientCapabilitiesWorkspaceEdit
+                .parse(map['workspaceEdit']),
+        didChangeConfiguration: map['didChangeConfiguration'] is! Map
+            ? null
+            : WorkspaceClientCapabilitiesDidChangeConfiguration
+                .parse(map['didChangeConfiguration']),
+        didChangeWatchedFiles: map['didChangeWatchedFiles'] is! Map
+            ? null
+            : WorkspaceClientCapabilitiesDidChangeWatchedFiles
+                .parse(map['didChangeWatchedFiles']),
+        symbol: map['symbol'] is! Map
+            ? null
+            : WorkspaceClientCapabilitiesSymbol.parse(map['symbol']),
+        executeCommand: map['executeCommand'] is! Map
+            ? null
+            : WorkspaceClientCapabilitiesExecuteCommand
+                .parse(map['executeCommand']));
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'applyEdit': applyEdit,
+      'workspaceEdit': workspaceEdit?.toJson(),
+      'didChangeConfiguration': didChangeConfiguration?.toJson(),
+      'didChangeWatchedFiles': didChangeWatchedFiles?.toJson(),
+      'symbol': symbol?.toJson(),
+      'executeCommand': executeCommand?.toJson()
+    };
+  }
+}
+
+class TextDocumentClientCapabilities {
+  TextDocumentClientCapabilitiesSynchronization synchronization;
+
+  TextDocumentClientCapabilitiesCompletion completion;
+
+  TextDocumentClientCapabilitiesHover hover;
+
+  TextDocumentClientCapabilitiesSignatureHelp signatureHelp;
+
+  TextDocumentClientCapabilitiesReferences references;
+
+  TextDocumentClientCapabilitiesDocumentHighlight documentHighlight;
+
+  TextDocumentClientCapabilitiesDocumentSymbol documentSymbol;
+
+  TextDocumentClientCapabilitiesFormatting formatting;
+
+  TextDocumentClientCapabilitiesRangeFormatting rangeFormatting;
+
+  TextDocumentClientCapabilitiesOnTypeFormatting onTypeFormatting;
+
+  TextDocumentClientCapabilitiesDefinition definition;
+
+  TextDocumentClientCapabilitiesCodeAction codeAction;
+
+  TextDocumentClientCapabilitiesCodeLens codeLens;
+
+  TextDocumentClientCapabilitiesDocumentLink documentLink;
+
+  TextDocumentClientCapabilitiesRename rename;
+
+  TextDocumentClientCapabilities(
+      {this.synchronization,
+      this.completion,
+      this.hover,
+      this.signatureHelp,
+      this.references,
+      this.documentHighlight,
+      this.documentSymbol,
+      this.formatting,
+      this.rangeFormatting,
+      this.onTypeFormatting,
+      this.definition,
+      this.codeAction,
+      this.codeLens,
+      this.documentLink,
+      this.rename});
+
+  static TextDocumentClientCapabilities parse(Map map) {
+    return new TextDocumentClientCapabilities(
+        synchronization: map['synchronization'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesSynchronization
+                .parse(map['synchronization']),
+        completion: map['completion'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesCompletion.parse(map['completion']),
+        hover: map['hover'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesHover.parse(map['hover']),
+        signatureHelp: map['signatureHelp'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesSignatureHelp
+                .parse(map['signatureHelp']),
+        references: map['references'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesReferences.parse(map['references']),
+        documentHighlight: map['documentHighlight'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesDocumentHighlight
+                .parse(map['documentHighlight']),
+        documentSymbol: map['documentSymbol'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesDocumentSymbol
+                .parse(map['documentSymbol']),
+        formatting: map['formatting'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesFormatting.parse(map['formatting']),
+        rangeFormatting: map['rangeFormatting'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesRangeFormatting
+                .parse(map['rangeFormatting']),
+        onTypeFormatting: map['onTypeFormatting'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesOnTypeFormatting
+                .parse(map['onTypeFormatting']),
+        definition: map['definition'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesDefinition.parse(map['definition']),
+        codeAction: map['codeAction'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesCodeAction.parse(map['codeAction']),
+        codeLens: map['codeLens'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesCodeLens.parse(map['codeLens']),
+        documentLink: map['documentLink'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesDocumentLink
+                .parse(map['documentLink']),
+        rename: map['rename'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesRename.parse(map['rename']));
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'synchronization': synchronization?.toJson(),
+      'completion': completion?.toJson(),
+      'hover': hover?.toJson(),
+      'signatureHelp': signatureHelp?.toJson(),
+      'references': references?.toJson(),
+      'documentHighlight': documentHighlight?.toJson(),
+      'documentSymbol': documentSymbol?.toJson(),
+      'formatting': formatting?.toJson(),
+      'rangeFormatting': rangeFormatting?.toJson(),
+      'onTypeFormatting': onTypeFormatting?.toJson(),
+      'definition': definition?.toJson(),
+      'codeAction': codeAction?.toJson(),
+      'codeLens': codeLens?.toJson(),
+      'documentLink': documentLink?.toJson(),
+      'rename': rename?.toJson()
+    };
+  }
+}
+
+class ClientCapabilities {
+  WorkspaceClientCapabilities workspace;
+
+  TextDocumentClientCapabilities textDocument;
 
   dynamic experimental;
 
@@ -319,15 +636,19 @@ class ClientCapabilities {
 
   static ClientCapabilities parse(Map map) {
     return new ClientCapabilities(
-        workspace: map['workspace'],
-        textDocument: map['textDocument'],
+        workspace: map['workspace'] is! Map
+            ? null
+            : WorkspaceClientCapabilities.parse(map['workspace']),
+        textDocument: map['textDocument'] is! Map
+            ? null
+            : TextDocumentClientCapabilities.parse(map['textDocument']),
         experimental: map['experimental']);
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'workspace': workspace,
-      'textDocument': textDocument,
+      'workspace': workspace?.toJson(),
+      'textDocument': textDocument?.toJson(),
       'experimental': experimental
     };
   }
@@ -750,17 +1071,21 @@ class RegistrationParams {
 }
 
 class TextDocumentRegistrationOptions {
-  dynamic documentSelector;
+  List<DocumentFilter> documentSelector;
 
   TextDocumentRegistrationOptions({this.documentSelector});
 
   static TextDocumentRegistrationOptions parse(Map map) {
     return new TextDocumentRegistrationOptions(
-        documentSelector: map['documentSelector']);
+        documentSelector: map['documentSelector'] is! Iterable
+            ? null
+            : map['documentSelector']
+                .map<DocumentFilter>(DocumentFilter.parse)
+                .toList());
   }
 
   Map<String, dynamic> toJson() {
-    return {'documentSelector': documentSelector};
+    return {'documentSelector': documentSelector?.map((x) => x.toJson())};
   }
 }
 
@@ -831,7 +1156,7 @@ class DidOpenTextDocumentParams {
 }
 
 class DidChangeTextDocumentParams {
-  dynamic textDocument;
+  VersionedTextDocumentIdentifier textDocument;
 
   List<TextDocumentContentChangeEvent> contentChanges;
 
@@ -839,7 +1164,9 @@ class DidChangeTextDocumentParams {
 
   static DidChangeTextDocumentParams parse(Map map) {
     return new DidChangeTextDocumentParams(
-        textDocument: map['textDocument'],
+        textDocument: map['textDocument'] is! Map
+            ? null
+            : VersionedTextDocumentIdentifier.parse(map['textDocument']),
         contentChanges: map['contentChanges'] is! Iterable
             ? null
             : map['contentChanges']
@@ -850,7 +1177,7 @@ class DidChangeTextDocumentParams {
 
   Map<String, dynamic> toJson() {
     return {
-      'textDocument': textDocument,
+      'textDocument': textDocument?.toJson(),
       'contentChanges': contentChanges?.map((x) => x.toJson())
     };
   }
@@ -874,6 +1201,32 @@ class TextDocumentContentChangeEvent {
 
   Map<String, dynamic> toJson() {
     return {'range': range?.toJson(), 'rangeLength': rangeLength, 'text': text};
+  }
+}
+
+class TextDocumentChangeRegistrationOptions
+    extends TextDocumentRegistrationOptions {
+  num syncKind;
+
+  List<DocumentFilter> documentSelector;
+
+  TextDocumentChangeRegistrationOptions({this.syncKind, this.documentSelector});
+
+  static TextDocumentChangeRegistrationOptions parse(Map map) {
+    return new TextDocumentChangeRegistrationOptions(
+        syncKind: map['syncKind'],
+        documentSelector: map['documentSelector'] is! Iterable
+            ? null
+            : map['documentSelector']
+                .map<DocumentFilter>(DocumentFilter.parse)
+                .toList());
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'syncKind': syncKind,
+      'documentSelector': documentSelector?.map((x) => x.toJson())
+    };
   }
 }
 
@@ -917,6 +1270,33 @@ class DidSaveTextDocumentParams {
   }
 }
 
+class TextDocumentSaveRegistrationOptions
+    extends TextDocumentRegistrationOptions {
+  bool includeText;
+
+  List<DocumentFilter> documentSelector;
+
+  TextDocumentSaveRegistrationOptions(
+      {this.includeText, this.documentSelector});
+
+  static TextDocumentSaveRegistrationOptions parse(Map map) {
+    return new TextDocumentSaveRegistrationOptions(
+        includeText: map['includeText'],
+        documentSelector: map['documentSelector'] is! Iterable
+            ? null
+            : map['documentSelector']
+                .map<DocumentFilter>(DocumentFilter.parse)
+                .toList());
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'includeText': includeText,
+      'documentSelector': documentSelector?.map((x) => x.toJson())
+    };
+  }
+}
+
 class DidCloseTextDocumentParams {
   TextDocumentIdentifier textDocument;
 
@@ -952,7 +1332,7 @@ class DidChangeWatchedFilesParams {
 }
 
 class FileEvent {
-  dynamic uri;
+  String uri;
 
   num type;
 
@@ -968,7 +1348,7 @@ class FileEvent {
 }
 
 class PublishDiagnosticsParams {
-  dynamic uri;
+  String uri;
 
   List<Diagnostic> diagnostics;
 
@@ -1025,7 +1405,7 @@ class CompletionItem {
 
   String insertText;
 
-  InsertTextFormat insertTextFormat;
+  num insertTextFormat;
 
   TextEdit textEdit;
 
@@ -1082,6 +1462,36 @@ class CompletionItem {
       'additionalTextEdits': additionalTextEdits?.map((x) => x.toJson()),
       'command': command?.toJson(),
       'data': data
+    };
+  }
+}
+
+class CompletionRegistrationOptions extends TextDocumentRegistrationOptions {
+  List<String> triggerCharacters;
+
+  bool resolveProvider;
+
+  List<DocumentFilter> documentSelector;
+
+  CompletionRegistrationOptions(
+      {this.triggerCharacters, this.resolveProvider, this.documentSelector});
+
+  static CompletionRegistrationOptions parse(Map map) {
+    return new CompletionRegistrationOptions(
+        triggerCharacters: map['triggerCharacters'],
+        resolveProvider: map['resolveProvider'],
+        documentSelector: map['documentSelector'] is! Iterable
+            ? null
+            : map['documentSelector']
+                .map<DocumentFilter>(DocumentFilter.parse)
+                .toList());
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'triggerCharacters': triggerCharacters,
+      'resolveProvider': resolveProvider,
+      'documentSelector': documentSelector?.map((x) => x.toJson())
     };
   }
 }
@@ -1176,6 +1586,62 @@ class ParameterInformation {
 
   Map<String, dynamic> toJson() {
     return {'label': label, 'documentation': documentation};
+  }
+}
+
+class SignatureHelpRegistrationOptions extends TextDocumentRegistrationOptions {
+  List<String> triggerCharacters;
+
+  List<DocumentFilter> documentSelector;
+
+  SignatureHelpRegistrationOptions(
+      {this.triggerCharacters, this.documentSelector});
+
+  static SignatureHelpRegistrationOptions parse(Map map) {
+    return new SignatureHelpRegistrationOptions(
+        triggerCharacters: map['triggerCharacters'],
+        documentSelector: map['documentSelector'] is! Iterable
+            ? null
+            : map['documentSelector']
+                .map<DocumentFilter>(DocumentFilter.parse)
+                .toList());
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'triggerCharacters': triggerCharacters,
+      'documentSelector': documentSelector?.map((x) => x.toJson())
+    };
+  }
+}
+
+class ReferenceParams extends TextDocumentPositionParams {
+  ReferenceContext context;
+
+  TextDocumentIdentifier textDocument;
+
+  Position position;
+
+  ReferenceParams({this.context, this.textDocument, this.position});
+
+  static ReferenceParams parse(Map map) {
+    return new ReferenceParams(
+        context: map['context'] is! Map
+            ? null
+            : ReferenceContext.parse(map['context']),
+        textDocument: map['textDocument'] is! Map
+            ? null
+            : TextDocumentIdentifier.parse(map['textDocument']),
+        position:
+            map['position'] is! Map ? null : Position.parse(map['position']));
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'context': context?.toJson(),
+      'textDocument': textDocument?.toJson(),
+      'position': position?.toJson()
+    };
   }
 }
 
@@ -1360,6 +1826,31 @@ class CodeLens {
   }
 }
 
+class CodeLensRegistrationOptions extends TextDocumentRegistrationOptions {
+  bool resolveProvider;
+
+  List<DocumentFilter> documentSelector;
+
+  CodeLensRegistrationOptions({this.resolveProvider, this.documentSelector});
+
+  static CodeLensRegistrationOptions parse(Map map) {
+    return new CodeLensRegistrationOptions(
+        resolveProvider: map['resolveProvider'],
+        documentSelector: map['documentSelector'] is! Iterable
+            ? null
+            : map['documentSelector']
+                .map<DocumentFilter>(DocumentFilter.parse)
+                .toList());
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'resolveProvider': resolveProvider,
+      'documentSelector': documentSelector?.map((x) => x.toJson())
+    };
+  }
+}
+
 class DocumentLinkParams {
   TextDocumentIdentifier textDocument;
 
@@ -1380,7 +1871,7 @@ class DocumentLinkParams {
 class DocumentLink {
   Range range;
 
-  dynamic target;
+  String target;
 
   DocumentLink({this.range, this.target});
 
@@ -1395,10 +1886,36 @@ class DocumentLink {
   }
 }
 
+class DocumentLinkRegistrationOptions extends TextDocumentRegistrationOptions {
+  bool resolveProvider;
+
+  List<DocumentFilter> documentSelector;
+
+  DocumentLinkRegistrationOptions(
+      {this.resolveProvider, this.documentSelector});
+
+  static DocumentLinkRegistrationOptions parse(Map map) {
+    return new DocumentLinkRegistrationOptions(
+        resolveProvider: map['resolveProvider'],
+        documentSelector: map['documentSelector'] is! Iterable
+            ? null
+            : map['documentSelector']
+                .map<DocumentFilter>(DocumentFilter.parse)
+                .toList());
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'resolveProvider': resolveProvider,
+      'documentSelector': documentSelector?.map((x) => x.toJson())
+    };
+  }
+}
+
 class DocumentFormattingParams {
   TextDocumentIdentifier textDocument;
 
-  dynamic options;
+  Map<String, String> options;
 
   DocumentFormattingParams({this.textDocument, this.options});
 
@@ -1420,7 +1937,7 @@ class DocumentRangeFormattingParams {
 
   Range range;
 
-  dynamic options;
+  Map<String, String> options;
 
   DocumentRangeFormattingParams({this.textDocument, this.range, this.options});
 
@@ -1449,7 +1966,7 @@ class DocumentOnTypeFormattingParams {
 
   String ch;
 
-  dynamic options;
+  Map<String, String> options;
 
   DocumentOnTypeFormattingParams(
       {this.textDocument, this.position, this.ch, this.options});
@@ -1471,6 +1988,39 @@ class DocumentOnTypeFormattingParams {
       'position': position?.toJson(),
       'ch': ch,
       'options': options
+    };
+  }
+}
+
+class DocumentOnTypeFormattingRegistrationOptions
+    extends TextDocumentRegistrationOptions {
+  String firstTriggerCharacter;
+
+  List<String> moreTriggerCharacter;
+
+  List<DocumentFilter> documentSelector;
+
+  DocumentOnTypeFormattingRegistrationOptions(
+      {this.firstTriggerCharacter,
+      this.moreTriggerCharacter,
+      this.documentSelector});
+
+  static DocumentOnTypeFormattingRegistrationOptions parse(Map map) {
+    return new DocumentOnTypeFormattingRegistrationOptions(
+        firstTriggerCharacter: map['firstTriggerCharacter'],
+        moreTriggerCharacter: map['moreTriggerCharacter'],
+        documentSelector: map['documentSelector'] is! Iterable
+            ? null
+            : map['documentSelector']
+                .map<DocumentFilter>(DocumentFilter.parse)
+                .toList());
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'firstTriggerCharacter': firstTriggerCharacter,
+      'moreTriggerCharacter': moreTriggerCharacter,
+      'documentSelector': documentSelector?.map((x) => x.toJson())
     };
   }
 }
@@ -1535,16 +2085,17 @@ class ExecuteCommandRegistrationOptions {
 }
 
 class ApplyWorkspaceEditParams {
-  dynamic edit;
+  WorkspaceEdit edit;
 
   ApplyWorkspaceEditParams({this.edit});
 
   static ApplyWorkspaceEditParams parse(Map map) {
-    return new ApplyWorkspaceEditParams(edit: map['edit']);
+    return new ApplyWorkspaceEditParams(
+        edit: map['edit'] is! Map ? null : WorkspaceEdit.parse(map['edit']));
   }
 
   Map<String, dynamic> toJson() {
-    return {'edit': edit};
+    return {'edit': edit?.toJson()};
   }
 }
 
@@ -1710,7 +2261,7 @@ abstract class FileChangeType {
  * Defines whether the insert text in a completion item should be interpreted as
  * plain text or a snippet.
  */
-abstract class InsertTextFormat {
+abstract class InsertTextFormatType {
   /**
 	 * The primary text to be inserted is treated as a plain string.
 	 */
@@ -1829,4 +2380,430 @@ abstract class SymbolKind {
   static const num Boolean = 17;
 
   static const num Array = 18;
+}
+
+class WorkspaceClientCapabilitiesWorkspaceEdit {
+  /**
+		 * The client supports versioned document changes in `WorkspaceEdit`s
+		 */
+  bool documentChanges;
+
+  WorkspaceClientCapabilitiesWorkspaceEdit({this.documentChanges});
+
+  static WorkspaceClientCapabilitiesWorkspaceEdit parse(Map map) {
+    return new WorkspaceClientCapabilitiesWorkspaceEdit(
+        documentChanges: map['documentChanges']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'documentChanges': documentChanges};
+  }
+}
+
+class WorkspaceClientCapabilitiesDidChangeConfiguration {
+  /**
+		 * Did change configuration notification supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  WorkspaceClientCapabilitiesDidChangeConfiguration({this.dynamicRegistration});
+
+  static WorkspaceClientCapabilitiesDidChangeConfiguration parse(Map map) {
+    return new WorkspaceClientCapabilitiesDidChangeConfiguration(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class WorkspaceClientCapabilitiesDidChangeWatchedFiles {
+  /**
+		 * Did change watched files notification supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  WorkspaceClientCapabilitiesDidChangeWatchedFiles({this.dynamicRegistration});
+
+  static WorkspaceClientCapabilitiesDidChangeWatchedFiles parse(Map map) {
+    return new WorkspaceClientCapabilitiesDidChangeWatchedFiles(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class WorkspaceClientCapabilitiesSymbol {
+  /**
+		 * Symbol request supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  WorkspaceClientCapabilitiesSymbol({this.dynamicRegistration});
+
+  static WorkspaceClientCapabilitiesSymbol parse(Map map) {
+    return new WorkspaceClientCapabilitiesSymbol(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class WorkspaceClientCapabilitiesExecuteCommand {
+  /**
+		 * Execute command supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  WorkspaceClientCapabilitiesExecuteCommand({this.dynamicRegistration});
+
+  static WorkspaceClientCapabilitiesExecuteCommand parse(Map map) {
+    return new WorkspaceClientCapabilitiesExecuteCommand(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesSynchronization {
+  /**
+		 * Whether text document synchronization supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  /**
+		 * The client supports sending will save notifications.
+		 */
+  bool willSave;
+
+  /**
+		 * The client supports sending a will save request and
+		 * waits for a response providing text edits which will
+		 * be applied to the document before it is saved.
+		 */
+  bool willSaveWaitUntil;
+
+  /**
+		 * The client supports did save notifications.
+		 */
+  bool didSave;
+
+  TextDocumentClientCapabilitiesSynchronization(
+      {this.dynamicRegistration,
+      this.willSave,
+      this.willSaveWaitUntil,
+      this.didSave});
+
+  static TextDocumentClientCapabilitiesSynchronization parse(Map map) {
+    return new TextDocumentClientCapabilitiesSynchronization(
+        dynamicRegistration: map['dynamicRegistration'],
+        willSave: map['willSave'],
+        willSaveWaitUntil: map['willSaveWaitUntil'],
+        didSave: map['didSave']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'dynamicRegistration': dynamicRegistration,
+      'willSave': willSave,
+      'willSaveWaitUntil': willSaveWaitUntil,
+      'didSave': didSave
+    };
+  }
+}
+
+class TextDocumentClientCapabilitiesCompletion {
+  /**
+		 * Whether completion supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  /**
+		 * The client supports the following `CompletionItem` specific
+		 * capabilities.
+		 */
+  TextDocumentClientCapabilitiesCompletionCompletionItem completionItem;
+
+  TextDocumentClientCapabilitiesCompletion(
+      {this.dynamicRegistration, this.completionItem});
+
+  static TextDocumentClientCapabilitiesCompletion parse(Map map) {
+    return new TextDocumentClientCapabilitiesCompletion(
+        dynamicRegistration: map['dynamicRegistration'],
+        completionItem: map['completionItem'] is! Map
+            ? null
+            : TextDocumentClientCapabilitiesCompletionCompletionItem
+                .parse(map['completionItem']));
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'dynamicRegistration': dynamicRegistration,
+      'completionItem': completionItem?.toJson()
+    };
+  }
+}
+
+class TextDocumentClientCapabilitiesCompletionCompletionItem {
+  /**
+			 * Client supports snippets as insert text.
+			 *
+			 * A snippet can define tab stops and placeholders with `$1`, `$2`
+			 * and `${3:foo}`. `$0` defines the final tab stop, it defaults to
+			 * the end of the snippet. Placeholders with equal identifiers are linked,
+			 * that is typing in one will update others too.
+			 */
+  bool snippetSupport;
+
+  TextDocumentClientCapabilitiesCompletionCompletionItem({this.snippetSupport});
+
+  static TextDocumentClientCapabilitiesCompletionCompletionItem parse(Map map) {
+    return new TextDocumentClientCapabilitiesCompletionCompletionItem(
+        snippetSupport: map['snippetSupport']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'snippetSupport': snippetSupport};
+  }
+}
+
+class TextDocumentClientCapabilitiesHover {
+  /**
+		 * Whether hover supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesHover({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesHover parse(Map map) {
+    return new TextDocumentClientCapabilitiesHover(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesSignatureHelp {
+  /**
+		 * Whether signature help supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesSignatureHelp({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesSignatureHelp parse(Map map) {
+    return new TextDocumentClientCapabilitiesSignatureHelp(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesReferences {
+  /**
+		 * Whether references supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesReferences({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesReferences parse(Map map) {
+    return new TextDocumentClientCapabilitiesReferences(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesDocumentHighlight {
+  /**
+		 * Whether document highlight supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesDocumentHighlight({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesDocumentHighlight parse(Map map) {
+    return new TextDocumentClientCapabilitiesDocumentHighlight(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesDocumentSymbol {
+  /**
+		 * Whether document symbol supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesDocumentSymbol({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesDocumentSymbol parse(Map map) {
+    return new TextDocumentClientCapabilitiesDocumentSymbol(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesFormatting {
+  /**
+		 * Whether formatting supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesFormatting({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesFormatting parse(Map map) {
+    return new TextDocumentClientCapabilitiesFormatting(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesRangeFormatting {
+  /**
+		 * Whether range formatting supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesRangeFormatting({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesRangeFormatting parse(Map map) {
+    return new TextDocumentClientCapabilitiesRangeFormatting(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesOnTypeFormatting {
+  /**
+		 * Whether on type formatting supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesOnTypeFormatting({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesOnTypeFormatting parse(Map map) {
+    return new TextDocumentClientCapabilitiesOnTypeFormatting(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesDefinition {
+  /**
+		 * Whether definition supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesDefinition({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesDefinition parse(Map map) {
+    return new TextDocumentClientCapabilitiesDefinition(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesCodeAction {
+  /**
+		 * Whether code action supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesCodeAction({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesCodeAction parse(Map map) {
+    return new TextDocumentClientCapabilitiesCodeAction(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesCodeLens {
+  /**
+		 * Whether code lens supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesCodeLens({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesCodeLens parse(Map map) {
+    return new TextDocumentClientCapabilitiesCodeLens(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesDocumentLink {
+  /**
+		 * Whether document link supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesDocumentLink({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesDocumentLink parse(Map map) {
+    return new TextDocumentClientCapabilitiesDocumentLink(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
+}
+
+class TextDocumentClientCapabilitiesRename {
+  /**
+		 * Whether rename supports dynamic registration.
+		 */
+  bool dynamicRegistration;
+
+  TextDocumentClientCapabilitiesRename({this.dynamicRegistration});
+
+  static TextDocumentClientCapabilitiesRename parse(Map map) {
+    return new TextDocumentClientCapabilitiesRename(
+        dynamicRegistration: map['dynamicRegistration']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'dynamicRegistration': dynamicRegistration};
+  }
 }

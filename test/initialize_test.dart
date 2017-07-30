@@ -30,6 +30,10 @@ main() {
 class TestServer extends Server {
   @override
   initialize(InitializeParams params) {
-    print(params.processId);
+    return new InitializeResult(
+      capabilities: new ServerCapabilities(
+        textDocumentSync: new TextDocumentSyncOptions()
+      )
+    );
   }
 }
