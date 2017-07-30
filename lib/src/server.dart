@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'package:json_god/json_god.dart' as god;
 import 'package:json_rpc_2/json_rpc_2.dart' as json_rpc;
 import 'package:meta/meta.dart';
 import 'package:stream_channel/stream_channel.dart';
 import 'protocol/interfaces/interfaces.dart';
 
+/// Implements the server side of the Language Server Protocol.
 abstract class Server {
   @mustCallSuper
   void listen(StreamChannel<String> channel) {
@@ -15,10 +15,9 @@ abstract class Server {
 
   void _configure(json_rpc.Server server) {
     server.registerMethod('initialize', (json_rpc.Parameters params) {
-      var initializeParams =
-          god.deserializeDatum(params.asMap, outputType: InitializeParams);
-      return new Future<InitializeResultOrError>.sync(
-          () => initialize(initializeParams)).then(god.serializeObject);
+      var initializeParams = InitializeParams.parse(params.asMap);
+      return new Future<InitializeResult>.sync(
+          () => initialize(initializeParams)).then((r) => r.toJson());
     });
   }
 
@@ -29,5 +28,5 @@ abstract class Server {
   /// notifications should be dropped, except for the exit notification. This will allow the exit a server without an `initialize` request.
   ///
   /// Until the server has responded to the `initialize` request with an `InitializeResult` the client must not sent any additional requests or notifications to the server.
-  FutureOr<InitializeResultOrError> initialize(InitializeParams params);
+  FutureOr<InitializeResult> initialize(InitializeParams params);
 }

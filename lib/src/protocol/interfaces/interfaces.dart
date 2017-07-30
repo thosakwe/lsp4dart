@@ -1,3 +1,33 @@
+/// AUTO-GENERATED: Don't even bother modifying.
+
+class Message {
+  String jsonrpc;
+
+  Message({this.jsonrpc});
+
+  static Message parse(Map map) {
+    return new Message(jsonrpc: map['jsonrpc']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'jsonrpc': jsonrpc};
+  }
+}
+
+class CancelParams {
+  dynamic id;
+
+  CancelParams({this.id});
+
+  static CancelParams parse(Map map) {
+    return new CancelParams(id: map['id']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'id': id};
+  }
+}
+
 class Position {
   num line;
 
@@ -33,7 +63,7 @@ class Range {
 }
 
 class Location {
-  String uri;
+  dynamic uri;
 
   Range range;
 
@@ -146,7 +176,7 @@ class TextDocumentEdit {
 }
 
 class TextDocumentIdentifier {
-  String uri;
+  dynamic uri;
 
   TextDocumentIdentifier({this.uri});
 
@@ -160,7 +190,7 @@ class TextDocumentIdentifier {
 }
 
 class TextDocumentItem {
-  String uri;
+  dynamic uri;
 
   String languageId;
 
@@ -720,21 +750,17 @@ class RegistrationParams {
 }
 
 class TextDocumentRegistrationOptions {
-  List<DocumentFilter> documentSelector;
+  dynamic documentSelector;
 
   TextDocumentRegistrationOptions({this.documentSelector});
 
   static TextDocumentRegistrationOptions parse(Map map) {
     return new TextDocumentRegistrationOptions(
-        documentSelector: map['documentSelector'] is! Iterable
-            ? null
-            : map['documentSelector']
-                .map<DocumentFilter>(DocumentFilter.parse)
-                .toList());
+        documentSelector: map['documentSelector']);
   }
 
   Map<String, dynamic> toJson() {
-    return {'documentSelector': documentSelector?.map((x) => x.toJson())};
+    return {'documentSelector': documentSelector};
   }
 }
 
@@ -926,7 +952,7 @@ class DidChangeWatchedFilesParams {
 }
 
 class FileEvent {
-  String uri;
+  dynamic uri;
 
   num type;
 
@@ -942,7 +968,7 @@ class FileEvent {
 }
 
 class PublishDiagnosticsParams {
-  String uri;
+  dynamic uri;
 
   List<Diagnostic> diagnostics;
 
@@ -1354,7 +1380,7 @@ class DocumentLinkParams {
 class DocumentLink {
   Range range;
 
-  String target;
+  dynamic target;
 
   DocumentLink({this.range, this.target});
 
@@ -1536,25 +1562,49 @@ class ApplyWorkspaceEditResponse {
   }
 }
 
+abstract class ErrorCodes {
+  // Defined by JSON RPC
+  static const num ParseError = -32700;
+
+  static const num InvalidRequest = -32600;
+
+  static const num MethodNotFound = -32601;
+
+  static const num InvalidParams = -32602;
+
+  static const num InternalError = -32603;
+
+  static const num serverErrorStart = -32099;
+
+  static const num serverErrorEnd = -32000;
+
+  static const num ServerNotInitialized = -32002;
+
+  static const num UnknownErrorCode = -32001;
+
+  // Defined by the protocol.
+  static const num RequestCancelled = -32800;
+}
+
 abstract class DiagnosticSeverity {
   /**
-     * Reports an error.
-     */
+	 * Reports an error.
+	 */
   static const num Error = 1;
 
   /**
-     * Reports a warning.
-     */
+	 * Reports a warning.
+	 */
   static const num Warning = 2;
 
   /**
-     * Reports an information.
-     */
+	 * Reports an information.
+	 */
   static const num Information = 3;
 
   /**
-     * Reports a hint.
-     */
+	 * Reports a hint.
+	 */
   static const num Hint = 4;
 }
 
@@ -1563,10 +1613,10 @@ abstract class DiagnosticSeverity {
  */
 abstract class InitializeErrorCode {
   /**
-     * If the protocol version provided by the client can't be handled by the server.
-     * @deprecated This initialize error got replaced by client capabilities. There is
-     * no version handshake in version 3.0x
-     */
+	 * If the protocol version provided by the client can't be handled by the server.
+	 * @deprecated This initialize error got replaced by client capabilities. There is
+	 * no version handshake in version 3.0x
+	 */
   static const num unknownProtocolVersion = 1;
 }
 
@@ -1575,43 +1625,43 @@ abstract class InitializeErrorCode {
  */
 abstract class TextDocumentSyncKind {
   /**
-     * Documents should not be synced at all.
-     */
+	 * Documents should not be synced at all.
+	 */
   static const num None = 0;
 
   /**
-     * Documents are synced by always sending the full content
-     * of the document.
-     */
+	 * Documents are synced by always sending the full content
+	 * of the document.
+	 */
   static const num Full = 1;
 
   /**
-     * Documents are synced by sending the full content on open.
-     * After that only incremental updates to the document are
-     * send.
-     */
+	 * Documents are synced by sending the full content on open.
+	 * After that only incremental updates to the document are
+	 * send.
+	 */
   static const num Incremental = 2;
 }
 
 abstract class MessageType {
   /**
-     * An error message.
-     */
+	 * An error message.
+	 */
   static const num Error = 1;
 
   /**
-     * A warning message.
-     */
+	 * A warning message.
+	 */
   static const num Warning = 2;
 
   /**
-     * An information message.
-     */
+	 * An information message.
+	 */
   static const num Info = 3;
 
   /**
-     * A log message.
-     */
+	 * A log message.
+	 */
   static const num Log = 4;
 }
 
@@ -1620,19 +1670,19 @@ abstract class MessageType {
  */
 abstract class TextDocumentSaveReason {
   /**
-     * Manually triggered, e.g. by the user pressing save, by starting debugging,
-     * or by an API call.
-     */
+	 * Manually triggered, e.g. by the user pressing save, by starting debugging,
+	 * or by an API call.
+	 */
   static const num Manual = 1;
 
   /**
-     * Automatic after a delay.
-     */
+	 * Automatic after a delay.
+	 */
   static const num AfterDelay = 2;
 
   /**
-     * When the editor lost focus.
-     */
+	 * When the editor lost focus.
+	 */
   static const num FocusOut = 3;
 }
 
@@ -1641,18 +1691,18 @@ abstract class TextDocumentSaveReason {
  */
 abstract class FileChangeType {
   /**
-     * The file got created.
-     */
+	 * The file got created.
+	 */
   static const num Created = 1;
 
   /**
-     * The file got changed.
-     */
+	 * The file got changed.
+	 */
   static const num Changed = 2;
 
   /**
-     * The file got deleted.
-     */
+	 * The file got deleted.
+	 */
   static const num Deleted = 3;
 }
 
@@ -1662,20 +1712,20 @@ abstract class FileChangeType {
  */
 abstract class InsertTextFormat {
   /**
-     * The primary text to be inserted is treated as a plain string.
-     */
+	 * The primary text to be inserted is treated as a plain string.
+	 */
   static const num PlainText = 1;
 
   /**
-     * The primary text to be inserted is treated as a snippet.
-     *
-     * A snippet can define tab stops and placeholders with `$1`, `$2`
-     * and `${3:foo}`. `$0` defines the final tab stop, it defaults to
-     * the end of the snippet. Placeholders with equal identifiers are linked,
-     * that is typing in one will update others too.
-     *
-     * See also: https://github.com/Microsoft/vscode/blob/master/src/vs/editor/contrib/snippet/common/snippet.md
-     */
+	 * The primary text to be inserted is treated as a snippet.
+	 *
+	 * A snippet can define tab stops and placeholders with `$1`, `$2`
+	 * and `${3:foo}`. `$0` defines the final tab stop, it defaults to
+	 * the end of the snippet. Placeholders with equal identifiers are linked,
+	 * that is typing in one will update others too.
+	 *
+	 * See also: https://github.com/Microsoft/vscode/blob/master/src/vs/editor/contrib/snippet/common/snippet.md
+	 */
   static const num Snippet = 2;
 }
 
@@ -1725,18 +1775,18 @@ abstract class CompletionItemKind {
  */
 abstract class DocumentHighlightKind {
   /**
-     * A textual occurrence.
-     */
+	 * A textual occurrence.
+	 */
   static const num Text = 1;
 
   /**
-     * Read-access of a symbol, like reading a variable.
-     */
+	 * Read-access of a symbol, like reading a variable.
+	 */
   static const num Read = 2;
 
   /**
-     * Write-access of a symbol, like writing to a variable.
-     */
+	 * Write-access of a symbol, like writing to a variable.
+	 */
   static const num Write = 3;
 }
 

@@ -31,6 +31,5 @@ class TestServer extends Server {
   @override
   initialize(InitializeParams params) {
     print(params.processId);
-    return new InitializeResult();
   }
 }
