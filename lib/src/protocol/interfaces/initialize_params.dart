@@ -40,6 +40,34 @@ class InitializeParams {
    * The initial trace setting. If omitted trace is disabled ('off').
    */
   String trace;
+
+  InitializeParams(
+      {this.processId,
+      this.rootPath,
+      this.rootUri,
+      this.initializationOptions,
+      this.capabilities,
+      this.trace});
+
+  factory InitializeParams.fromMap(Map map) => new InitializeParams(
+      processId: map['processId'],
+      rootPath: map['rootPath'],
+      rootUri: map['rootUri'],
+      initializationOptions: map['initializationOptions'],
+      capabilities: map['capabilities'] is! Map
+          ? null
+          : new ClientCapabilities.fromMap(map['capabilities']),
+      trace: map['trace']);
+
+  Map<String, dynamic> toMap() {
+    return {
+      'processId': processId,
+      'rootUri': rootUri,
+      'initializationOptions': initializationOptions,
+      'capabilities': capabilities,
+      'trace': trace
+    };
+  }
 }
 
 /// Constants for LSP trace settings.
