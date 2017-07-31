@@ -3,9 +3,10 @@ import 'package:json_rpc_2/json_rpc_2.dart' as json_rpc;
 import 'package:meta/meta.dart';
 import 'package:stream_channel/stream_channel.dart';
 import 'protocol/interfaces/interfaces.dart';
+import 'protocol/server_base.dart';
 
 /// Implements the server side of the Language Server Protocol.
-abstract class Server {
+abstract class Server implements BaseServer {
   @mustCallSuper
   void listen(StreamChannel<String> channel) {
     var server = new json_rpc.Server(channel);
