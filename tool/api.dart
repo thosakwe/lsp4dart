@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dart_style/dart_style.dart';
 import 'package:http/http.dart' as http;
 import 'package:indenting_buffer/indenting_buffer.dart';
 import 'package:recase/recase.dart';
@@ -160,7 +161,7 @@ main() async {
 
   for (var k in m.keys) {
     if (!await k.exists()) await k.create(recursive: true);
-    await k.writeAsString(m[k].toString());
+    await k.writeAsString(new DartFormatter().format(m[k].toString()));
   }
 }
 
